@@ -1,35 +1,3 @@
-# from flask import Flask, jsonify, request
-# from dotenv import load_dotenv
-
-# # Load environment variables
-# load_dotenv()
-
-# from .trip_recommender import recommend_trip
-
-# app = Flask(__name__)
-
-# @app.route("/")
-# def home():
-#     return jsonify({"message": "Welcome to the AI Trip Recommender API!"})
-
-# @app.route("/recommend-trip", methods=["POST"])
-# def recommend_trip_endpoint():
-#     data = request.json
-#     destination = data.get("destination")
-#     duration = data.get("duration")
-
-#     if not destination or not duration:
-#         return jsonify({"error": "Missing required parameters"}), 400
-
-#     recommendation = recommend_trip(destination, duration)
-#     if recommendation is None:
-#         return jsonify({"error": "No recommendation found"}), 404
-
-#     return jsonify({"recommendation": recommendation})
-
-# if __name__ == "__main__":
-#     app.run(debug=True)
-
 import os
 import promptlayer
 from dotenv import load_dotenv
@@ -75,6 +43,16 @@ def recommend_trip():
         }
 
         if WITH_PROMPTLAYER:
+            response = promptlayer_client.run(
+                prompt_name="ai-trip-recommender",
+                input_variables=variables,
+                prompt_release_label=os.getenv("ENV"),
+                tags=["web-app", "flask-api"]
+            )
+
+            pl_request_id = response["request_id"]
+            trip_plan = response["prompt_blueprint"]["prompt_template"]["messages"][-1]['content'][0]['text']
+        else:
             # Fetch stored prompt template from PromptLayer
             trip_template_prompt = promptlayer_client.templates.get(
                 "ai-trip-recommender",
@@ -93,16 +71,6 @@ def recommend_trip():
 
             # Extract trip plan from response using openai native format
             trip_plan = response.choices[0].message.content
-        else:
-            response = promptlayer_client.run(
-                prompt_name="ai-trip-recommender",
-                input_variables=variables,
-                prompt_release_label=os.getenv("ENV"),
-                tags=["web-app", "flask-api"]
-            )
-
-            pl_request_id = response["request_id"]
-            trip_plan = response["prompt_blueprint"]["prompt_template"]["messages"][-1]['content'][0]['text']
 
         # Associate request with the prompt template in PromptLayer
         promptlayer_client.track.prompt(
