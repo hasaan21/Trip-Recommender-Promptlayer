@@ -9,11 +9,13 @@ load_dotenv()
 # Load API Keys from environment variables
 PROMPTLAYER_API_KEY = os.getenv("PROMPTLAYER_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 
 # Initialize PromptLayer Client
 promptlayer_client = promptlayer.PromptLayer(api_key=PROMPTLAYER_API_KEY, enable_tracing=True)
 openai = promptlayer_client.openai.OpenAI(api_key=OPENAI_API_KEY)
-WITH_PROMPTLAYER = False
+anthropic = promptlayer_client.anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+WITH_PROMPTLAYER = True
 
 # Flask Application
 app = Flask(__name__)
@@ -46,7 +48,7 @@ def recommend_trip():
             response = promptlayer_client.run(
                 prompt_name="ai-trip-recommender",
                 input_variables=variables,
-                prompt_release_label=os.getenv("ENV"),
+                # prompt_release_label=os.getenv("ENV"),
                 tags=["web-app", "flask-api"]
             )
 
